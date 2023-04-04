@@ -1,0 +1,16 @@
+Manage AirZone system via local REST API (No Cloud).
+---------------------------------------------------
+Be sure you can access your AirZone localy:
+
+     wget -qO - --post-data '{"systemid":1}' http://<YOUR_IP>:3000/api/v1/hvac
+
+     If you have not wget, enter the following url in your browser:
+
+     http://<YOUR_IP>:3000/api/v1/integration
+
+     if you see "{"errors":[{"error":"Method not provided or not supported"}]}" it's working!
+     
+   
+Enter your AirZone IP and let the plugin auto-discover your system.
+You can get temperature and humidity, change SetPoint, change mode, set on/off for each zone.
+A global command as been implemented to change mode and to switch on/off.
