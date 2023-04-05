@@ -1,5 +1,5 @@
 # Manage AirZone
-# $Id: plugin.py 196 2023-04-04 14:41:52Z eric $
+# $Id: plugin.py 199 2023-04-05 12:46:43Z eric $
 #
 
 """
@@ -189,38 +189,41 @@ class AirZonePlugin:
     def updateStatus(self):
         data={'systemid':self._systemId,'zoneid':0}
         r=requests.post(self._url,json=data)
-        res=r.json()['data']
-        allStatus=0
-        for zone in res:
-            Domoticz.Debug('Updating zone '+zone['name']+': '+str(zone['on'])+', setpoint: '+str(zone['setpoint'])+', roomTemp: '+str(zone['roomTemp'])+', mode: '+self.getModeStr(zone['mode']))
-            zoneId = zone['zoneID']
-            # Mode
-            mode = self._modes[zone['mode']]
-            Devices[zoneId].Update(sValue=str(mode),nValue=mode)
-            if zoneId==self._master['zoneID']:
-                Devices[49].Update(sValue=str(mode),nValue=mode)
-            # Temperature
-            uval=' C'
-            if zone['units'] == 1:
-                uval=' F'
-            temp = str(round(zone['roomTemp'],1))
-            Devices[50+zoneId].Update(sValue=str(temp)+';'+str(zone['humidity'])+';0',nValue=0)
-            # SetPoint
-            sp=zone['setpoint']
-            Devices[100+zoneId].Update(sValue=str(sp),nValue=round(sp))
-            # On/Off
-            sval="Off"
-            nval=0
-            if zone['on'] == 1:
-                sval="On"
-                nval=1
-                allStatus=1
-            Devices[150+zoneId].Update(sValue=sval,nValue=nval)
-        if allStatus==1:
-            Devices[199].Update(sValue="On",nValue=1)
+        if r.status_code==200:
+            res=r.json()['data']
+            allStatus=0
+            for zone in res:
+                Domoticz.Debug('Updating zone '+zone['name']+': '+str(zone['on'])+', setpoint: '+str(zone['setpoint'])+', roomTemp: '+str(zone['roomTemp'])+', mode: '+self.getModeStr(zone['mode']))
+                zoneId = zone['zoneID']
+                # Mode
+                mode = self._modes[zone['mode']]
+                Devices[zoneId].Update(sValue=str(mode),nValue=mode)
+                if zoneId==self._master['zoneID']:
+                    Devices[49].Update(sValue=str(mode),nValue=mode)
+                # Temperature
+                uval=' C'
+                if zone['units'] == 1:
+                    uval=' F'
+                temp = str(round(zone['roomTemp'],1))
+                Devices[50+zoneId].Update(sValue=str(temp)+';'+str(zone['humidity'])+';0',nValue=0)
+                # SetPoint
+                sp=zone['setpoint']
+                Devices[100+zoneId].Update(sValue=str(sp),nValue=round(sp))
+                # On/Off
+                sval="Off"
+                nval=0
+                if zone['on'] == 1:
+                    sval="On"
+                    nval=1
+                    allStatus=1
+                Devices[150+zoneId].Update(sValue=sval,nValue=nval)
+            if allStatus==1:
+                Devices[199].Update(sValue="On",nValue=1)
+            else:
+                Devices[199].Update(sValue="Off",nValue=0)
         else:
-            Devices[199].Update(sValue="Off",nValue=0)
-        
+            Domoticz.Error(str(r))
+            
     def onDeviceAdded(self):
         Domoticz.Log("Adding device")
         return
