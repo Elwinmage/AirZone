@@ -197,6 +197,7 @@ class AirZonePlugin:
         r=requests.post(self._url,json=data)
         if r.status_code==200:
             res=r.json()['data']
+            Domoticz.Debug(res)
             allStatus=0
             demand=False
             for zone in res:
