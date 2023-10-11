@@ -11,6 +11,7 @@ Be sure you can access your AirZone localy:
      if you see "{"errors":[{"error":"Method not provided or not supported"}]}" it's working!
      
    
-Enter your AirZone IP and let the plugin auto-discover your system.
-You can get temperature and humidity, change SetPoint, change mode, set on/off for each zone.
+Enter your AirZone IP in Setup>Hardware>AirZone and let the plugin auto-discover your system.
+You can get temperature and humidity, know if the system is heating or cooling, change SetPoint, change mode, set on/off for each zone.
+
 A global command as been implemented to change mode and to switch on/off.
