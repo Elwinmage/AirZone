@@ -1,5 +1,5 @@
 # Manage AirZone
-# $Id: plugin.py 199 2023-04-05 12:46:43Z eric $
+# $Id: plugin.py 207 2023-09-21 12:15:26Z eric $
 #
 
 """
@@ -81,6 +81,7 @@ from urllib.parse import urlparse
 #   51 -  98 Temperature and humidity
 #  101 - 148 SetPoint, 149 for main
 #  151 - 198 Status: On or Off, 199 for main
+#  200 : Demand to cold or heat
         
 class AirZonePlugin:
 
@@ -144,6 +145,9 @@ class AirZonePlugin:
             # Global command is 49 (only 32 zones can be declared so no problem)        
             if 49 not in Devices:
                 self.createDevice(49,'Principal')
+            # Heat or cold demand
+            if 200 not in Devices:
+               Domoticz.Device(Name="Demande ",Unit=(200),TypeName="Switch",Switchtype=0,Image=9).Create()
         except Exception as e:
             Domoticz.Error("Can not retrieve info for System")
             Domoticz.Error(str(e))
@@ -155,7 +159,7 @@ class AirZonePlugin:
         else:
             Domoticz.Status("Creating device for zone "+str(zId)+": "+zName)
             # Temperature and humidity
-            Domoticz.Device(Name="T°"+zName,Unit=(50+int(zId)),Type=82, Subtype=1).Create()
+            Domoticz.Device(Name="TÂ°"+zName,Unit=(50+int(zId)),Type=82, Subtype=1).Create()
         # Mode
         Domoticz.Device(Name=zName+' Mode',Unit=int(zId),TypeName="Selector Switch", Image=9,Options=self._masterOptions).Create()
         # SetPoint
@@ -174,17 +178,19 @@ class AirZonePlugin:
         elif idMode == 4:
             return 'Ventilation'
         elif idMode == 5:
-            return 'Déshumidificateur'
+            return 'DÃ©shumidificateur'
         elif idMode == 7:
             return 'Auto'
-
-
-        
 
         
     def onHeartbeat(self):
         Domoticz.Debug("onHeartbeat called")
-        self.updateStatus()
+        try:
+            self.updateStatus()
+        except Exception as e:
+            Domoticz.Error("Update Failed with:")
+            Domoticz.Error(str(e))
+            Domoticz.Error("Try to restart")
 
     def updateStatus(self):
         data={'systemid':self._systemId,'zoneid':0}
@@ -192,6 +198,7 @@ class AirZonePlugin:
         if r.status_code==200:
             res=r.json()['data']
             allStatus=0
+            demand=False
             for zone in res:
                 Domoticz.Debug('Updating zone '+zone['name']+': '+str(zone['on'])+', setpoint: '+str(zone['setpoint'])+', roomTemp: '+str(zone['roomTemp'])+', mode: '+self.getModeStr(zone['mode']))
                 zoneId = zone['zoneID']
@@ -217,6 +224,17 @@ class AirZonePlugin:
                     nval=1
                     allStatus=1
                 Devices[150+zoneId].Update(sValue=sval,nValue=nval)
+                #Cold or head Demand
+                if zone['cold_demand'] == 1 or zone['heat_demand'] == 1 :
+                    demand=True
+
+            if demand:
+                if Devices[200].sValue!="On":
+                    Devices[200].Update(sValue="On",nValue=1)
+            else:
+                if Devices[200].sValue!="Off":
+                    Devices[200].Update(sValue="Off",nValue=0)
+                    
             if allStatus==1:
                 Devices[199].Update(sValue="On",nValue=1)
             else:
@@ -334,4 +352,3 @@ def DumpConfigToLog():
         Domoticz.Debug("Device sValue:   '" + Devices[x].sValue + "'")
         Domoticz.Debug("Device LastLevel: " + str(Devices[x].LastLevel))
     return
-
